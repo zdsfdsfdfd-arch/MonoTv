@@ -32,6 +32,20 @@ object SettingsCodec {
     const val KEY_ANIMATION = "animation"
     const val KEY_DEMO_CONTENT = "demoContent"
 
+    /** Every key [encode] may produce. A store walks this list so that keys left out of an encoding get removed. */
+    val KEYS: List<String> = listOf(
+        KEY_DOCK_SIZE,
+        KEY_DOCK_APPS,
+        KEY_APP_ORDER,
+        KEY_HIDDEN_APPS,
+        KEY_SHOW_NON_TV_APPS,
+        KEY_THEME,
+        KEY_WALLPAPER,
+        KEY_ACCENT,
+        KEY_ANIMATION,
+        KEY_DEMO_CONTENT,
+    )
+
     /**
      * Upper bound of the recent-launch history. Thirty entries cover "recently used" sorting many times over while
      * keeping the stored string — rewritten on every app launch — a couple of kilobytes at most.
