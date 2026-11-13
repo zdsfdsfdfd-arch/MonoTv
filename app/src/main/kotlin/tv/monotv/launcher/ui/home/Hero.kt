@@ -23,7 +23,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -42,7 +41,6 @@ import tv.monotv.launcher.ui.components.MonoIcon
 import tv.monotv.launcher.ui.components.PointerTarget
 import tv.monotv.launcher.ui.components.ProgressBar
 import tv.monotv.launcher.ui.components.Txt
-import tv.monotv.launcher.ui.components.detectTap
 import tv.monotv.launcher.ui.components.tappable
 import tv.monotv.launcher.ui.components.drawGlow
 import tv.monotv.launcher.ui.components.drawSoftShadow

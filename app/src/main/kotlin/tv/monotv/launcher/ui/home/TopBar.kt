@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -40,7 +39,6 @@ import tv.monotv.launcher.ui.components.LocalPointerHandler
 import tv.monotv.launcher.ui.components.MonoIcon
 import tv.monotv.launcher.ui.components.PointerTarget
 import tv.monotv.launcher.ui.components.Txt
-import tv.monotv.launcher.ui.components.detectTap
 import tv.monotv.launcher.ui.components.tappable
 import tv.monotv.launcher.ui.components.drawSoftShadow
 import tv.monotv.launcher.ui.theme.Dimens

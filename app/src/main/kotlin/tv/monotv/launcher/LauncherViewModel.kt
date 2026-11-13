@@ -48,7 +48,6 @@ import tv.monotv.launcher.nav.NavState
 import tv.monotv.launcher.nav.Overlay
 import tv.monotv.launcher.nav.Section
 import tv.monotv.launcher.nav.SettingsCatalog
-import tv.monotv.launcher.nav.SettingsFrame
 import tv.monotv.launcher.nav.SettingsPageId
 import tv.monotv.launcher.ui.components.PointerTarget
 
