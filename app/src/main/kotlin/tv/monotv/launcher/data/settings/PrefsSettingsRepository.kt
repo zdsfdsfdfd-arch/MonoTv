@@ -2,6 +2,8 @@ package tv.monotv.launcher.data.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,23 +59,31 @@ class PrefsSettingsRepository(context: Context) : SettingsRepository {
      * Applies [transform] to the current settings; the new value is visible to every reader when this returns.
      *
      * [transform] runs under the repository lock, so two concurrent updates never lose each other's change. Keep it
-     * a pure function of its argument. If it throws, the exception reaches the caller and nothing is changed.
+     * a pure function of its argument. A transform that throws changes nothing: the failure is logged and swallowed,
+     * because a home screen that ignores one key press is recoverable and one that crashes on it is not.
      */
     override fun update(transform: (LauncherSettings) -> LauncherSettings) {
         synchronized(lock) {
             val before = settingsState.value
-            val requested = transform(before)
+            val requested = try {
+                transform(before)
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "Settings update failed, keeping the current settings", e)
+                return
+            }
             if (requested == before) return
             val encoded = SettingsCodec.encode(requested)
             val after = SettingsCodec.decode(encoded)
             if (after == before) return
-            settingsState.value = after
-            persist { editor ->
+            // Queue the write before publishing: a collector that reacts with another update() (collectors on an
+            // immediate dispatcher run right inside the assignment) must queue its write after this one.
+            persist {
                 for (key in SettingsCodec.KEYS) {
                     val value = encoded[key]
-                    if (value == null) editor.remove(key) else editor.putString(key, value)
+                    if (value == null) remove(key) else putString(key, value)
                 }
             }
+            settingsState.value = after
         }
     }
 
@@ -112,23 +122,22 @@ class PrefsSettingsRepository(context: Context) : SettingsRepository {
         }
     }
 
-    /** Must be called with [lock] held. */
+    /** Must be called with [lock] held. Writes first and publishes second, for the reason given in [update]. */
     private fun publishRecents(recents: List<RecentLaunch>) {
         val encoded = SettingsCodec.encodeRecents(recents)
+        persist { putString(KEY_RECENTS, encoded) }
         recentsState.value = SettingsCodec.decodeRecents(encoded)
-        persist { editor -> editor.putString(KEY_RECENTS, encoded) }
     }
 
     /**
-     * Queues an asynchronous write. `apply()` updates the preferences' own memory image at once and writes the file
-     * on a background thread; a failure there costs the last change after a restart, never the running launcher.
+     * Queues an asynchronous write (`apply()`, not `commit()`): the preferences' own memory image is updated at
+     * once and the file is written on a background thread. A failure there costs the last change after a restart,
+     * never the running launcher.
      */
-    private inline fun persist(write: (SharedPreferences.Editor) -> Unit) {
+    private inline fun persist(crossinline write: SharedPreferences.Editor.() -> Unit) {
         val prefs = prefs ?: return
         try {
-            val editor = prefs.edit()
-            write(editor)
-            editor.apply()
+            prefs.edit { write() }
         } catch (e: RuntimeException) {
             // Nothing to roll back: the in-memory state stays authoritative for this run.
         }
@@ -150,5 +159,7 @@ class PrefsSettingsRepository(context: Context) : SettingsRepository {
 
         /** Recent launches, see [SettingsCodec.encodeRecents]. Deliberately not one of [SettingsCodec.KEYS]. */
         private const val KEY_RECENTS = "recents"
+
+        private const val TAG = "MonoTvSettings"
     }
 }

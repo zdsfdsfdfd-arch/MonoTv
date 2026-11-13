@@ -1,5 +1,6 @@
 package tv.monotv.launcher.data.system
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -232,6 +233,8 @@ object DiagnosticsReport {
         return lines
     }
 
+    /** Feature names newer than minSdk are plain strings: an older system simply answers "no" to them. */
+    @SuppressLint("InlinedApi")
     private fun features(packageManager: PackageManager): List<String> {
         val features = listOf(
             "leanback" to PackageManager.FEATURE_LEANBACK,
@@ -246,6 +249,8 @@ object DiagnosticsReport {
             "google play services: ${yesNo(packageInfo(packageManager, GOOGLE_PLAY_SERVICES) != null)}"
     }
 
+    /** MATCH_DISABLED_COMPONENTS has the same value as the GET_DISABLED_COMPONENTS it replaced in API 24. */
+    @SuppressLint("InlinedApi")
     private fun homeCandidates(packageManager: PackageManager): List<String> {
         val current = PlatformProbe.currentHome(packageManager)
         val lines = ArrayList<String>()

@@ -5,12 +5,14 @@ import android.content.SharedPreferences
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -133,19 +135,40 @@ class PrefsSettingsRepositoryTest {
     }
 
     @Test
-    fun `a failing transform changes nothing`() {
+    fun `a failing transform changes nothing and does not take the launcher down`() {
         val repository = PrefsSettingsRepository(context)
         repository.update { it.copy(accent = AccentColor.Lime) }
-        try {
-            repository.update { error("boom") }
-            fail("the caller's own exception must not be swallowed")
-        } catch (expected: IllegalStateException) {
-            assertEquals("boom", expected.message)
-        }
-        assertEquals(LauncherSettings(accent = AccentColor.Lime), repository.settings.value)
+        val before = repository.settings.value
+
+        repository.update { error("boom") }
+        repository.update { throw IndexOutOfBoundsException("moved an app that is gone") }
+
+        assertSame(before, repository.settings.value)
+        assertEquals(LauncherSettings(accent = AccentColor.Lime), PrefsSettingsRepository(context).settings.value)
         // ...and the repository is still usable afterwards.
         repository.update { it.copy(demoContent = true) }
         assertEquals(LauncherSettings(accent = AccentColor.Lime, demoContent = true), PrefsSettingsRepository(context).settings.value)
+    }
+
+    @Test
+    fun `an update made from inside a collector is persisted after the update that caused it`() {
+        val repository = PrefsSettingsRepository(context)
+        val scope = CoroutineScope(Dispatchers.Unconfined)
+        // An unconfined collector runs inside the assignment that publishes the new value, i.e. inside update().
+        val job = scope.launch {
+            repository.settings.collect { settings ->
+                if (settings.theme == ThemeMode.Graphite && settings.accent != AccentColor.Snow) {
+                    repository.update { it.copy(accent = AccentColor.Snow) }
+                }
+            }
+        }
+
+        repository.update { it.copy(theme = ThemeMode.Graphite) }
+        job.cancel()
+
+        val expected = LauncherSettings(theme = ThemeMode.Graphite, accent = AccentColor.Snow)
+        assertEquals(expected, repository.settings.value)
+        assertEquals("the file must end up with the newest state, not the outer update's", expected, PrefsSettingsRepository(context).settings.value)
     }
 
     @Test
