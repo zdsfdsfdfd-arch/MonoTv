@@ -168,6 +168,7 @@ object ContentComposer : ContentPlanner {
                     progress = item.progress,
                 )
             }
+        val backdrops = backdrops(dock.map { it.key.packageName })
         val spotlights = dock.asSequence().map { app ->
             HeroItem(
                 id = APP_ID_PREFIX + app.key.flatten(),
@@ -176,7 +177,7 @@ object ContentComposer : ContentPlanner {
                 title = app.label,
                 description = config.known(app.knownId)?.tagline,
                 actionLabel = ACTION_OPEN,
-                art = ArtSource.Wallpaper(backdropFor(app.key.packageName)),
+                art = ArtSource.Wallpaper(backdrops.getValue(app.key.packageName)),
                 appKey = app.key,
                 intentUri = null,
                 progress = null,
@@ -190,27 +191,53 @@ object ContentComposer : ContentPlanner {
     }
 
     /**
-     * Built-in wallpaper used as the backdrop of an app spotlight.
+     * Built-in wallpaper (id) used as the backdrop of each app spotlight, keyed by package name.
      *
-     * Apps ship a small banner, not a full-screen picture, so the spotlight borrows one of the launcher's own
-     * wallpapers. It is chosen from the package name alone so that an app keeps "its" backdrop for good — across
-     * restarts, Dock reordering and app updates — instead of the home screen reshuffling itself.
+     * Apps ship a small banner, not a full-screen picture, so a spotlight borrows one of the launcher's own
+     * wallpapers. Which one is decided by a stable hash of the package name: the same Dock looks the same after
+     * every restart, app update and on every device, instead of the home screen reshuffling itself.
+     *
+     * A hash alone would repeat itself all the time, though: with six wallpapers, five Dock apps get five different
+     * ones in fewer than one case out of ten, and identical neighbours make paging through the hero look frozen.
+     * So when two apps of the same Dock prefer the same wallpaper, the one whose package name sorts first keeps it
+     * and the other takes the next free one. Resolving in package-name order (not Dock order) makes the result
+     * depend only on which apps are in the Dock: rearranging the Dock never changes a backdrop.
      */
-    internal fun backdropFor(packageName: String): String {
+    internal fun backdrops(packageNames: Collection<String>): Map<String, String> {
         val wallpapers = Wallpapers.builtIn
-        return wallpapers[stableHash(packageName).mod(wallpapers.size)].id
+        val taken = BooleanArray(wallpapers.size)
+        var free = wallpapers.size
+        val result = HashMap<String, String>()
+        for (packageName in packageNames.toSortedSet()) {
+            if (free == 0) {
+                // More apps than wallpapers: repeats are unavoidable, start the next round.
+                taken.fill(false)
+                free = wallpapers.size
+            }
+            var index = preferredBackdrop(packageName)
+            while (taken[index]) index = (index + 1) % wallpapers.size
+            taken[index] = true
+            free--
+            result[packageName] = wallpapers[index].id
+        }
+        return result
     }
 
+    /** Index into [Wallpapers.builtIn] that the package would get if no other app wanted the same one. */
+    private fun preferredBackdrop(packageName: String): Int = stableHash(packageName).mod(Wallpapers.builtIn.size)
+
     /**
-     * 32-bit FNV-1a over the UTF-16 code units. Written out instead of relying on a runtime-provided hash so the
-     * mapping is part of this file: the same package gives the same backdrop on every device and every app version.
+     * 32-bit FNV-1a over the UTF-16 code units, with the high half folded into the low half because the result is
+     * reduced modulo a small number and FNV's lowest bits are weak (the last bit is merely the parity of the input).
+     * Written out instead of relying on a runtime-provided hash so the mapping is part of this file: the same
+     * package gives the same value on every device, Android version and build of the app.
      */
     private fun stableHash(text: String): Int {
         var hash = FNV_OFFSET_BASIS
         for (unit in text) {
             hash = (hash xor unit.code) * FNV_PRIME
         }
-        return hash
+        return hash xor (hash ushr 16)
     }
 
     private const val FNV_OFFSET_BASIS = 0x811C9DC5.toInt()

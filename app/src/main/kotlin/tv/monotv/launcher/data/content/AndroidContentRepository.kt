@@ -55,6 +55,9 @@ class AndroidContentRepository(
     // Application context only: this object outlives every activity.
     private val appContext: Context = context.applicationContext ?: context
 
+    /** Our own rows are never "something to continue in another app". */
+    private val ownPackage: String = appContext.packageName
+
     private val invalidations = MutableStateFlow(0)
     override val watchNextInvalidations: StateFlow<Int> = invalidations.asStateFlow()
 
@@ -144,7 +147,7 @@ class AndroidContentRepository(
         val title = row.stringOrNull(columns.title)?.trim()
         if (title.isNullOrEmpty()) return null
         val packageName = row.stringOrNull(columns.packageName) ?: return null
-        if (packageName == appContext.packageName) return null
+        if (packageName == ownPackage) return null
         // Rows usually come from a handful of apps: resolve each package once per query.
         val app = if (packageName in apps) apps[packageName] else appForPackage(packageName).also { apps[packageName] = it }
         if (app == null) return null
