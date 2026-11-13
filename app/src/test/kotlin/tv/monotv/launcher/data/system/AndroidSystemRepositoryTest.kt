@@ -13,6 +13,7 @@ import android.content.pm.ResolveInfo
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
@@ -27,6 +28,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -148,8 +150,10 @@ class AndroidSystemRepositoryTest {
         repository.start()
         assertEquals(1, clockReceivers())
         assertEquals(1, shadowOf(connectivity).networkCallbacks.size)
-        val registration = shadowOf(app).registeredReceivers.single { it.intentFilter.hasAction(Intent.ACTION_TIME_TICK) }
-        assertTrue("only the system may deliver clock broadcasts", registration.flags and Context.RECEIVER_NOT_EXPORTED != 0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val registration = shadowOf(app).registeredReceivers.single { it.intentFilter.hasAction(Intent.ACTION_TIME_TICK) }
+            assertTrue("only the system may deliver clock broadcasts", registration.flags and Context.RECEIVER_NOT_EXPORTED != 0)
+        }
 
         repository.stop()
         repository.stop()
@@ -198,7 +202,30 @@ class AndroidSystemRepositoryTest {
     }
 
     @Test
+    fun `validation and loss of the active network are followed`() {
+        // Drives the platform state and the callback together, so it holds both where the callback's arguments are
+        // used (Android 8+) and where the active network is re-read on every event (before that).
+        val network = connectivity.activeNetwork!!
+        shadowOf(connectivity).setNetworkCapabilities(network, capabilities(NetworkCapabilities.TRANSPORT_WIFI, validated = false))
+        val repository = repository()
+        repository.start()
+        val callback = shadowOf(connectivity).networkCallbacks.single()
+        assertEquals(NetworkState(NetworkKind.Wifi, validated = false), repository.network.value)
+
+        val validated = capabilities(NetworkCapabilities.TRANSPORT_WIFI, validated = true)
+        shadowOf(connectivity).setNetworkCapabilities(network, validated)
+        callback.onAvailable(network)
+        callback.onCapabilitiesChanged(network, validated)
+        assertEquals(NetworkState(NetworkKind.Wifi, validated = true), repository.network.value)
+
+        shadowOf(connectivity).setActiveNetworkInfo(null)
+        callback.onLost(network)
+        assertEquals(NetworkState(NetworkKind.Offline, validated = false), repository.network.value)
+    }
+
+    @Test
     fun `network callbacks move the state between wifi, ethernet and offline`() {
+        assumeTrue("callback arguments alone are authoritative from Android 8 on", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
         val wifi = connectivity.activeNetwork!!
         val ethernet = ShadowNetwork.newInstance(77)
         shadowOf(connectivity).setNetworkCapabilities(wifi, capabilities(NetworkCapabilities.TRANSPORT_WIFI, validated = false))
@@ -276,7 +303,7 @@ class AndroidSystemRepositoryTest {
         assertEquals("SberDevices", device.brand)
         assertEquals("SBDV-00006", device.model)
         assertEquals("sbdv_00006", device.device)
-        assertEquals(34, device.sdkInt)
+        assertEquals(Build.VERSION.SDK_INT, device.sdkInt)
         assertTrue(device.androidRelease.isNotEmpty())
         assertEquals(1920, device.widthPx)
         assertEquals(1080, device.heightPx)

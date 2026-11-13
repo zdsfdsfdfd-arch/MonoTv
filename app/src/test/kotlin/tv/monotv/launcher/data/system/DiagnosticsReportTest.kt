@@ -8,6 +8,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -72,7 +73,7 @@ class DiagnosticsReportTest {
         assertTrue(build.contains("manufacturer: SberDevices"))
         assertTrue(build.contains("model: SBDV-00006"))
         assertTrue(build.contains("fingerprint: SberDevices/sbdv_00006/sbdv_00006:11/RP1A/1234:user/release-keys"))
-        assertTrue(build.contains("sdk: 34"))
+        assertTrue(build.contains("sdk: ${Build.VERSION.SDK_INT}"))
         assertTrue(build.any { it.startsWith("supported ABIs: ") })
         assertTrue(build.any { it.startsWith("security patch: ") })
 
@@ -291,7 +292,12 @@ class DiagnosticsReportTest {
         val info = PackageInfo().apply {
             this.packageName = packageName
             this.versionName = versionName
-            longVersionCode = versionCode.toLong()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                longVersionCode = versionCode.toLong()
+            } else {
+                @Suppress("DEPRECATION")
+                this.versionCode = versionCode
+            }
             applicationInfo = ApplicationInfo().apply {
                 this.packageName = packageName
                 this.enabled = enabled
