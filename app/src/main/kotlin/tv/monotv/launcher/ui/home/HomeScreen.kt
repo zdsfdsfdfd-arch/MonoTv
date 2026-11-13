@@ -129,14 +129,13 @@ fun HomeScreen(state: LauncherUiState, modifier: Modifier = Modifier) {
                         .align(Alignment.BottomStart)
                         .padding(start = Dimens.SafeH, bottom = Dimens.SafeV + dockBlock + 22.dp),
                 )
-                if (heroItem?.kind == HeroKind.App) {
-                    HeroAppCard(
-                        item = heroItem,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = Dimens.SafeH + 26.dp, bottom = Dimens.SafeV + dockBlock + 44.dp),
-                    )
-                }
+                // Always composed (with null for non-app items) so the card crossfades out instead of vanishing.
+                HeroAppCard(
+                    item = heroItem?.takeIf { it.kind == HeroKind.App },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = Dimens.SafeH + 26.dp, bottom = Dimens.SafeV + dockBlock + 44.dp),
+                )
                 Dock(
                     apps = state.dock,
                     focusedIndex = dockFocus,
