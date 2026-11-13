@@ -1,6 +1,8 @@
 package tv.monotv.launcher
 
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
@@ -49,6 +51,31 @@ class MainActivity : ComponentActivity() {
                 viewModel.exit.collect { finish() }
             }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.permissions.collect { permission -> askFor(permission) }
+            }
+        }
+    }
+
+    /** Standard runtime-permission prompt; on firmwares without that UI the request is simply answered "denied". */
+    private fun askFor(permission: String) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(arrayOf(permission), PERMISSION_REQUEST)
+            }
+        } catch (_: RuntimeException) {
+            viewModel.onPermissionResult(granted = false)
+        }
+    }
+
+    @Deprecated("Deprecated in the framework, but the Activity Result API would pull in a launcher object for one call")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        @Suppress("DEPRECATION")
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST) {
+            viewModel.onPermissionResult(grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED })
+        }
     }
 
     override fun onStart() {
@@ -74,6 +101,10 @@ class MainActivity : ComponentActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) enterImmersive() else keys.reset()
+    }
+
+    private companion object {
+        const val PERMISSION_REQUEST = 41
     }
 
     /**

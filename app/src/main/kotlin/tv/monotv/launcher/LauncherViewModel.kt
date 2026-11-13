@@ -74,6 +74,8 @@ class LauncherViewModel(
     private val content: ContentRepository,
     private val planner: ContentPlanner,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    /** Whether the optional READ_TV_LISTINGS permission is currently granted. */
+    private val hasWatchNextAccess: () -> Boolean = { false },
 ) : ViewModel() {
 
     private val nav = MutableStateFlow(NavState())
@@ -82,6 +84,12 @@ class LauncherViewModel(
     private val watchNext = MutableStateFlow<List<ContinueItem>>(emptyList())
     private var toastJob: Job? = null
     private var started = false
+
+    private val watchNextAccess = MutableStateFlow(hasWatchNextAccess())
+    private val permissionRequests = MutableSharedFlow<String>(extraBufferCapacity = 1)
+
+    /** Runtime permissions the activity should ask the user for (only ever READ_TV_LISTINGS). */
+    val permissions: SharedFlow<String> = permissionRequests
 
     private val exitRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -143,6 +151,7 @@ class LauncherViewModel(
             toast = toast.value,
             bump = bump.value,
             loaded = a.all != null,
+            watchNextAccess = watchNextAccess.value,
         )
         // Data can change under the cursor (an app is uninstalled, a row empties): never show an invalid focus.
         val normalized = NavReducer.normalize(state.nav, contextFor(state))
@@ -152,7 +161,7 @@ class LauncherViewModel(
     val ui: StateFlow<LauncherUiState> =
         merge(
             apps.apps, settings.settings, settings.recents, system.clock, system.network, system.device,
-            inputs.inputs, watchNext, nav, toast, bump,
+            inputs.inputs, watchNext, nav, toast, bump, watchNextAccess,
         ).map { snapshot() }.stateIn(viewModelScope, SharingStarted.Eagerly, snapshot())
 
     init {
@@ -177,7 +186,20 @@ class LauncherViewModel(
         inputs.start()
         content.start()
         system.refreshDevice()
+        // The permission can also be granted from outside (adb), so re-check whenever we come to the front.
+        watchNextAccess.value = hasWatchNextAccess()
         viewModelScope.launch { reloadWatchNext() }
+    }
+
+    /** The activity reports the outcome of a permission prompt started through [permissions]. */
+    fun onPermissionResult(granted: Boolean) {
+        watchNextAccess.value = hasWatchNextAccess()
+        if (watchNextAccess.value) {
+            showToast("Доступ разрешён")
+            viewModelScope.launch { reloadWatchNext() }
+        } else if (!granted) {
+            showToast("Доступ не выдан. На части прошивок его можно дать только через adb — см. README")
+        }
     }
 
     fun stop() {
@@ -325,6 +347,13 @@ class LauncherViewModel(
             rowId == "apps_reset" -> openOverlay(Overlay.Confirm(ConfirmId.ResetApps))
             rowId == "home_toggle" ->
                 openOverlay(Overlay.Confirm(if (state.device.homeAliasEnabled) ConfirmId.DisableHome else ConfirmId.EnableHome))
+            rowId == "watch_next" ->
+                if (hasWatchNextAccess()) {
+                    watchNextAccess.value = true
+                    showToast("Доступ уже разрешён")
+                } else {
+                    permissionRequests.tryEmit(READ_TV_LISTINGS)
+                }
             rowId == "system_settings" ->
                 if (!system.openSystemSettings()) showToast("Системные настройки недоступны")
             rowId == "diagnostics" -> viewModelScope.launch {
@@ -403,8 +432,11 @@ class LauncherViewModel(
         }
     }
 
-    private companion object {
-        const val TOAST_MS = 3600L
-        const val DEMO_PREFIX = "demo:"
+    companion object {
+        private const val TOAST_MS = 3600L
+        private const val DEMO_PREFIX = "demo:"
+
+        /** Declared by the platform's TV provider app; lets a non-system app read other apps' Watch Next rows. */
+        const val READ_TV_LISTINGS = "android.permission.READ_TV_LISTINGS"
     }
 }

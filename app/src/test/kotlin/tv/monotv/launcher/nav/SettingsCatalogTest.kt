@@ -171,7 +171,10 @@ class SettingsCatalogTest {
         assertEquals("ru.sberdevices.starlauncher", byId.getValue("home").value)
         assertEquals("Сделать домашним экраном", byId.getValue("home_toggle").title)
         assertTrue(listOf("model", "android", "display", "memory", "version", "home").all { byId.getValue(it).kind == RowKind.Info })
-        assertTrue(listOf("system_settings", "home_toggle", "diagnostics").all { byId.getValue(it).kind == RowKind.Action })
+        assertTrue(listOf("system_settings", "watch_next", "home_toggle", "diagnostics").all { byId.getValue(it).kind == RowKind.Action })
+        assertEquals("Нет доступа", byId.getValue("watch_next").value)
+        val granted = rows(SettingsPageId.System, ui(device = device).copy(watchNextAccess = true)).first { it.id == "watch_next" }
+        assertEquals("Разрешено", granted.value)
 
         val asHome = rows(SettingsPageId.System, ui(device = device.copy(isDefaultHome = true, homeAliasEnabled = true))).associateBy { it.id }
         assertEquals("Mono TV", asHome.getValue("home").value)

@@ -30,6 +30,8 @@ data class LauncherUiState(
     val bump: BumpEvent? = null,
     /** False until the first app scan finished (UI shows skeleton tiles instead of an empty home). */
     val loaded: Boolean = false,
+    /** The optional READ_TV_LISTINGS permission is granted: other apps' "continue watching" rows can be read. */
+    val watchNextAccess: Boolean = false,
 ) {
     companion object {
         /** Number of columns of the Apps grid on the 960dp design canvas. */

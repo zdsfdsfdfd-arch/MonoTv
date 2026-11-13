@@ -41,7 +41,7 @@ object SettingsCatalog {
         SettingsPageId.Apps -> apps(ui)
         SettingsPageId.AppsVisibility -> appsVisibility(ui)
         SettingsPageId.AppsOrder -> ui.apps.map(::reorderable)
-        SettingsPageId.System -> system(ui.device)
+        SettingsPageId.System -> system(ui.device, ui.watchNextAccess)
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -183,7 +183,7 @@ object SettingsCatalog {
         }
     }
 
-    private fun system(device: DeviceInfo): List<SettingsRow> = listOf(
+    private fun system(device: DeviceInfo, watchNextAccess: Boolean): List<SettingsRow> = listOf(
         info("model", "Устройство", "${device.manufacturer} ${device.model}".trim()),
         info("android", "Android", "${device.androidRelease} (API ${device.sdkInt})"),
         info("display", "Экран", "${device.widthPx}×${device.heightPx} · ${device.densityDpi} dpi"),
@@ -191,6 +191,12 @@ object SettingsCatalog {
         info("version", "Версия Mono TV", device.launcherVersion),
         info("home", "Домашний экран", if (device.isDefaultHome) "Mono TV" else device.currentHomePackage ?: "Не определён"),
         action("system_settings", "Системные настройки", description = "Сеть, звук, обновления"),
+        action(
+            "watch_next",
+            "«Продолжить просмотр» из приложений",
+            value = if (watchNextAccess) "Разрешено" else "Нет доступа",
+            description = "Показывать то, что приложения сами публикуют в системе",
+        ),
         action(
             "home_toggle",
             if (device.homeAliasEnabled) "Вернуть стандартный домашний экран" else "Сделать домашним экраном",

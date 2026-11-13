@@ -408,6 +408,38 @@ class LauncherViewModelTest {
     }
 
     @Test
+    fun `watch next access is requested from the activity and reflected in the state`() = runTest(dispatcher) {
+        var granted = false
+        val model = LauncherViewModel(apps, settings, system, inputs, content, planner, io = dispatcher, hasWatchNextAccess = { granted })
+        val asked = ArrayList<String>()
+        val job = launch { model.permissions.collect { asked += it } }
+        assertFalse(model.ui.value.watchNextAccess)
+        model.onKey(NavKey.Up); model.onKey(NavKey.Up); model.onKey(NavKey.Ok)
+        val root = tv.monotv.launcher.nav.SettingsCatalog.rows(SettingsPageId.Root, model.ui.value)
+        repeat(root.indexOfFirst { it.id == "system" }) { model.onKey(NavKey.Down) }
+        model.onKey(NavKey.Ok)
+        val rows = tv.monotv.launcher.nav.SettingsCatalog.rows(SettingsPageId.System, model.ui.value)
+        repeat(rows.indexOfFirst { it.id == "watch_next" }) { model.onKey(NavKey.Down) }
+        model.onKey(NavKey.Ok)
+        assertEquals(listOf(LauncherViewModel.READ_TV_LISTINGS), asked)
+
+        model.onPermissionResult(granted = false)
+        assertFalse(model.ui.value.watchNextAccess)
+        assertNotNull(model.ui.value.toast)
+
+        granted = true
+        content.watchNext = listOf(ContinueItem("wn:9", "Сериал", null, ArtSource.AppBanner(installed[1].key), 0.2f, installed[1].key, null))
+        model.onPermissionResult(granted = true)
+        assertTrue(model.ui.value.watchNextAccess)
+        assertEquals("wn:9", model.ui.value.continueWatching.first().id)
+
+        // Already granted: pressing the row again asks nobody.
+        model.onKey(NavKey.Ok)
+        assertEquals(1, asked.size)
+        job.cancel()
+    }
+
+    @Test
     fun `watch next rows are loaded and reloaded on invalidation`() {
         assertTrue(ui.continueWatching.isEmpty())
         content.watchNext = listOf(ContinueItem("wn:1", "Фильм", null, ArtSource.AppBanner(installed[0].key), 0.4f, installed[0].key, "intent:#Intent;end"))

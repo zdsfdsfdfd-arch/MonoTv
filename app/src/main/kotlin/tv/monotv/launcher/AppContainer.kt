@@ -1,6 +1,8 @@
 package tv.monotv.launcher
 
 import android.app.Application
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -75,6 +77,13 @@ class AppContainer(private val app: Application) {
     }
 
     val viewModelFactory: ViewModelProvider.Factory = viewModelFactory {
-        initializer { LauncherViewModel(apps, settings, system, inputs, content, planner) }
+        initializer {
+            LauncherViewModel(
+                apps, settings, system, inputs, content, planner,
+                hasWatchNextAccess = {
+                    ContextCompat.checkSelfPermission(app, LauncherViewModel.READ_TV_LISTINGS) == PackageManager.PERMISSION_GRANTED
+                },
+            )
+        }
     }
 }
