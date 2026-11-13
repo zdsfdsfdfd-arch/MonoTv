@@ -39,16 +39,18 @@ object ImageMath {
      *
      * Channels are averaged independently, so the result is exact for opaque images — the loader always blurs an
      * opaque image. Returns a new array; the input is left untouched. Degenerate arguments return a plain copy.
+     * A radius beyond the image size cannot blur any further, so it is capped there (which also bounds the work).
      */
     fun boxBlur(pixels: IntArray, width: Int, height: Int, radius: Int, passes: Int): IntArray {
         val result = pixels.copyOf()
         if (width <= 0 || height <= 0 || radius <= 0 || passes <= 0) return result
         if (pixels.size.toLong() < width.toLong() * height) return result
 
+        val reach = min(radius, max(width, height))
         val scratch = IntArray(result.size)
         repeat(passes) {
-            blurLines(result, scratch, lines = height, length = width, lineStride = width, pixelStride = 1, radius)
-            blurLines(scratch, result, lines = width, length = height, lineStride = 1, pixelStride = width, radius)
+            blurLines(result, scratch, lines = height, length = width, lineStride = width, pixelStride = 1, reach)
+            blurLines(scratch, result, lines = width, length = height, lineStride = 1, pixelStride = width, reach)
         }
         return result
     }

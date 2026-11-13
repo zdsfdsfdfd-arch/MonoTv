@@ -1,0 +1,321 @@
+{
+  "_note": "Mono TV launcher configuration. To change it without rebuilding, put an edited copy of this file into the app's external files dir (Android/data/tv.monotv.launcher/files/launcher-config.json): it replaces this one as a whole. Inside 'packages' the builds are listed most preferred first (TV builds before phone builds). '_unverified' lists package ids that were only seen in device dumps (medium confidence); every other id was confirmed by a store page or a manifest. Fields starting with '_' and any unknown fields are ignored by the parser. Factory / engineering menus stay blocked even if an override removes them from 'blockedPackages'.",
+  "version": 1,
+  "dockPriority": [
+    "youtube",
+    "netflix",
+    "hbomax",
+    "appletv",
+    "spotify",
+    "kinopoisk",
+    "okko",
+    "wink",
+    "ivi",
+    "rutube",
+    "vkvideo",
+    "kion",
+    "premier",
+    "start",
+    "zvuk",
+    "amediateka",
+    "yandexmusic",
+    "sbertv",
+    "tricolor",
+    "smotreshka",
+    "limehd",
+    "peerstv",
+    "sbervideo",
+    "sberplay",
+    "twitch",
+    "primevideo",
+    "disneyplus",
+    "plex",
+    "kodi",
+    "vlc",
+    "jellyfin",
+    "stremio",
+    "mxplayer",
+    "steamlink",
+    "geforcenow",
+    "rustore"
+  ],
+  "knownApps": [
+    {
+      "id": "youtube",
+      "title": "YouTube",
+      "packages": [
+        "com.google.android.youtube.tv",
+        "ru.sberdevices.startube",
+        "org.smarttube.stable",
+        "org.smarttube.beta",
+        "app.smarttube.fdroid",
+        "com.teamsmart.videomanager.tv",
+        "com.liskovsoft.smarttubetv.beta",
+        "com.amazon.firetv.youtube"
+      ],
+      "tagline": "Видео, музыка и трансляции со всего мира",
+      "_unverified": ["ru.sberdevices.startube", "com.teamsmart.videomanager.tv"]
+    },
+    {
+      "id": "netflix",
+      "title": "Netflix",
+      "packages": ["com.netflix.ninja", "com.netflix.mediaclient"],
+      "tagline": "Фильмы и сериалы по подписке"
+    },
+    {
+      "id": "hbomax",
+      "title": "HBO Max",
+      "packages": ["com.wbd.stream", "com.hbo.hbonow"],
+      "tagline": "Сериалы и фильмы HBO и Warner Bros."
+    },
+    {
+      "id": "appletv",
+      "title": "Apple TV",
+      "packages": [
+        "com.apple.atve.androidtv.appletv",
+        "com.apple.atve.sony.appletv",
+        "com.apple.atve.amazon.appletv"
+      ],
+      "tagline": "Оригинальные фильмы и сериалы Apple"
+    },
+    {
+      "id": "spotify",
+      "title": "Spotify",
+      "packages": ["com.spotify.tv.android", "com.spotify.music"],
+      "tagline": "Музыка и подкасты",
+      "_unverified": ["com.spotify.music"]
+    },
+    {
+      "id": "kinopoisk",
+      "title": "Кинопоиск",
+      "packages": ["ru.kinopoisk.tv", "ru.kinopoisk"],
+      "tagline": "Фильмы, сериалы и ТВ-каналы"
+    },
+    {
+      "id": "okko",
+      "title": "Okko",
+      "packages": ["tv.okko.androidtv", "ru.more.play"],
+      "tagline": "Кино, сериалы и спорт"
+    },
+    {
+      "id": "wink",
+      "title": "Wink",
+      "packages": ["ru.rt.video.app.tv", "ru.rt.video.app.mobile"],
+      "tagline": "ТВ-каналы, фильмы и сериалы"
+    },
+    {
+      "id": "ivi",
+      "title": "Иви",
+      "packages": ["ru.ivi.client"],
+      "tagline": "Онлайн-кинотеатр"
+    },
+    {
+      "id": "rutube",
+      "title": "RUTUBE",
+      "packages": ["ru.rutube.app.tv", "ru.rutube.app"],
+      "tagline": "Видео, шоу и трансляции"
+    },
+    {
+      "id": "vkvideo",
+      "title": "VK Видео",
+      "packages": ["com.vk.tv", "com.vk.vkvideo"],
+      "tagline": "Видео, клипы и трансляции"
+    },
+    {
+      "id": "kion",
+      "title": "KION",
+      "packages": ["ru.mts.mtstv"],
+      "tagline": "Кино, сериалы и ТВ-каналы"
+    },
+    {
+      "id": "premier",
+      "title": "PREMIER",
+      "packages": ["one.premier.rustoretv", "gpm.tnt_premier"],
+      "tagline": "Сериалы, шоу и фильмы"
+    },
+    {
+      "id": "start",
+      "title": "START",
+      "packages": ["ru.start.androidtv", "ru.start.androidmobile"],
+      "tagline": "Сериалы и фильмы"
+    },
+    {
+      "id": "zvuk",
+      "title": "Звук",
+      "packages": ["ru.sberdevices.music", "com.zvooq.openplay"],
+      "tagline": "Музыка, подкасты и аудиокниги",
+      "_unverified": ["ru.sberdevices.music"]
+    },
+    {
+      "id": "amediateka",
+      "title": "Амедиатека",
+      "packages": ["ru.amediateka", "com.amdteka"],
+      "tagline": "Сериалы мировых студий"
+    },
+    {
+      "id": "yandexmusic",
+      "title": "Яндекс Музыка",
+      "packages": ["ru.yandex.music"],
+      "tagline": "Музыка и подкасты"
+    },
+    {
+      "id": "sbertv",
+      "title": "ТВ-каналы",
+      "packages": ["ru.sberdevices.starlivetv"],
+      "tagline": "Эфирные и онлайн-каналы",
+      "_unverified": ["ru.sberdevices.starlivetv"]
+    },
+    {
+      "id": "tricolor",
+      "title": "Триколор Кино и ТВ",
+      "packages": ["com.gsgroup.tricoloronline"],
+      "tagline": "ТВ-каналы и кино"
+    },
+    {
+      "id": "smotreshka",
+      "title": "Смотрёшка",
+      "packages": ["tv.lfstrm.smotreshka_stb", "tv.lfstrm.smotreshka"],
+      "tagline": "ТВ-каналы и архив передач",
+      "_unverified": ["tv.lfstrm.smotreshka_stb"]
+    },
+    {
+      "id": "limehd",
+      "title": "Лайм HD TV",
+      "packages": ["tv.limehd.stb", "limehd.ru.ctv.tv", "com.infolink.limeiptv"],
+      "tagline": "Бесплатные ТВ-каналы"
+    },
+    {
+      "id": "peerstv",
+      "title": "Peers.TV",
+      "packages": ["ru.cn.tv"],
+      "tagline": "ТВ-каналы онлайн"
+    },
+    {
+      "id": "sbervideo",
+      "title": "Видео",
+      "packages": ["ru.sberdevices.videos"],
+      "_unverified": ["ru.sberdevices.videos"]
+    },
+    {
+      "id": "sberplay",
+      "title": "SberPlay",
+      "packages": ["ru.sberdevices.sberplay"],
+      "tagline": "Облачные игры",
+      "_unverified": ["ru.sberdevices.sberplay"]
+    },
+    {
+      "id": "twitch",
+      "title": "Twitch",
+      "packages": ["tv.twitch.android.app"],
+      "tagline": "Игровые трансляции и стримы"
+    },
+    {
+      "id": "primevideo",
+      "title": "Prime Video",
+      "packages": ["com.amazon.amazonvideo.livingroom"],
+      "tagline": "Фильмы и сериалы Amazon"
+    },
+    {
+      "id": "disneyplus",
+      "title": "Disney+",
+      "packages": ["com.disney.disneyplus"],
+      "tagline": "Фильмы и сериалы Disney, Pixar и Marvel"
+    },
+    {
+      "id": "plex",
+      "title": "Plex",
+      "packages": ["com.plexapp.android"],
+      "tagline": "Домашняя медиатека"
+    },
+    {
+      "id": "kodi",
+      "title": "Kodi",
+      "packages": ["org.xbmc.kodi"],
+      "tagline": "Медиацентр для своих файлов"
+    },
+    {
+      "id": "vlc",
+      "title": "VLC",
+      "packages": ["org.videolan.vlc"],
+      "tagline": "Проигрыватель видео и музыки"
+    },
+    {
+      "id": "jellyfin",
+      "title": "Jellyfin",
+      "packages": ["org.jellyfin.androidtv"],
+      "tagline": "Свой медиасервер"
+    },
+    {
+      "id": "stremio",
+      "title": "Stremio",
+      "packages": ["com.stremio.one"],
+      "tagline": "Каталог фильмов и сериалов"
+    },
+    {
+      "id": "mxplayer",
+      "title": "MX Player",
+      "packages": ["com.mxtech.videoplayer.television"],
+      "tagline": "Видеоплеер"
+    },
+    {
+      "id": "steamlink",
+      "title": "Steam Link",
+      "packages": ["com.valvesoftware.steamlink"],
+      "tagline": "Игры с компьютера на экране ТВ"
+    },
+    {
+      "id": "geforcenow",
+      "title": "GeForce NOW",
+      "packages": ["com.nvidia.geforcenow"],
+      "tagline": "Облачные игры"
+    },
+    {
+      "id": "rustore",
+      "title": "RuStore",
+      "packages": ["ru.vk.store.tv"],
+      "tagline": "Магазин приложений",
+      "_unverified": ["ru.vk.store.tv"]
+    }
+  ],
+  "blockedPackages": [
+    "com.cvte.fac.*",
+    "com.cvte.tv.hkcfac",
+    "com.stb.factorymenu",
+    "ru.sberdevices.TvFactoryHelper",
+    "mediatek.factorymenu.ui",
+    "com.mediatek.tv.factory",
+    "com.mediatek.testpq",
+    "com.mediatek.factorymode*",
+    "com.mediatek.engineermode*",
+    "com.at.factory.factorymanager",
+    "com.tcl.factory.view",
+    "com.homwee.factory",
+    "com.smartdevice.factory",
+    "com.duokan.factorytest",
+    "com.hisense.autotest",
+    "com.realtek.factorytools",
+    "com.rtk.engmenu",
+    "com.apps.factory.ui",
+    "com.realtek.servicemenu",
+    "com.toptech.tvfactory",
+    "com.sdt.producttest",
+    "com.sdmc.facTest",
+    "com.utsmta.app",
+    "com.droidlogic.readlog",
+    "com.droidlogic.factory*",
+    "com.fengmi.testsuite",
+    "com.android.factorytest"
+  ],
+  "blockedKeywords": [
+    "factory",
+    "factorytest",
+    "engineermode",
+    "engmode",
+    "servicemenu",
+    "hwtest",
+    "burnin",
+    "agingtest",
+    "producttest"
+  ],
+  "extraLauncherCategories": ["ru.sberdevices.category.STAR_LAUNCHER"]
+}
