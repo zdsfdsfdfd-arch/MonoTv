@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.BaseColumns
 import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -115,7 +116,7 @@ class AndroidContentRepository(
         try {
             appContext.contentResolver.unregisterContentObserver(observer)
         } catch (_: RuntimeException) {
-            // Nothing to undo: the system drops observers of a dead process on its own.
+            // The content service is unreachable, so there is nothing left to unregister from.
         }
     }
 
@@ -250,7 +251,7 @@ class AndroidContentRepository(
         /** The poster when it is a local uri, otherwise the banner of the app that published the row. */
         internal fun posterArt(posterUri: String?, app: AppKey): ArtSource {
             val poster = posterUri?.trim().orEmpty()
-            val scheme = Uri.parse(poster).scheme?.lowercase(Locale.ROOT)
+            val scheme = poster.toUri().scheme?.lowercase(Locale.ROOT)
             return if (scheme in LOCAL_SCHEMES) ArtSource.LocalUri(poster) else ArtSource.AppBanner(app)
         }
 
