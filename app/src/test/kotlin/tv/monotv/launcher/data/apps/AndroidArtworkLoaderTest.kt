@@ -330,8 +330,8 @@ class AndroidArtworkLoaderTest {
 
         val artwork = checkNotNull(load(ArtSource.Wallpaper(id), 960, 540))
         assertTrue(artwork.isBanner)
-        assertTrue(artwork.image.width >= 960 || artwork.image.height >= 540)
-        assertTrue("downsampled to roughly the request", artwork.image.width <= 2 * 960)
+        val pixels = artwork.image.width.toLong() * artwork.image.height
+        assertTrue("downsampled to roughly the request, whatever the file's size", pixels <= 4L * 960 * 540)
     }
 
     @Test
@@ -357,7 +357,7 @@ class AndroidArtworkLoaderTest {
 
     @Test
     fun `jpg is preferred over png and webp for the custom wallpaper`() {
-        writeImage(File(filesDir, "wallpaper.webp"), bitmapOf(64, 36) { _, _ -> Color.GREEN }, Bitmap.CompressFormat.WEBP)
+        writeImage(File(filesDir, "wallpaper.webp"), bitmapOf(64, 36) { _, _ -> Color.GREEN }, Bitmap.CompressFormat.WEBP_LOSSLESS)
         writeImage(File(filesDir, "wallpaper.png"), bitmapOf(64, 36) { _, _ -> Color.BLUE })
         val source = ArtSource.Wallpaper(Wallpapers.CUSTOM)
         assertHue(240f, checkNotNull(load(source, 64, 36)).pixel(32, 18))

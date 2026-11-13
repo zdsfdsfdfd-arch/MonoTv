@@ -44,8 +44,8 @@ import kotlin.math.sqrt
  * content / file / resource uris. There is no network path at all — http(s) uris are refused before any I/O.
  *
  * Built for 1–2 GB TVs:
- *  - every decode runs on the `decode` dispatcher, is downsampled while decoding and never produces more pixels than were asked
- *    for (nor more than the source really has — the GPU scales up for free, RAM does not);
+ *  - every decode runs on the `decode` dispatcher, is downsampled while decoding and never produces more pixels
+ *    than were asked for (nor more than the source really has — the GPU scales up for free, RAM does not);
  *  - results live in a byte-bounded [LruCache], so scrolling back shows art on the first frame without the heap
  *    growing with the number of installed apps;
  *  - concurrent requests for the same picture share one decode;
@@ -170,6 +170,9 @@ class AndroidArtworkLoader(
     private fun guarded(block: () -> Artwork?): Artwork? = try {
         block()
     } catch (e: Exception) {
+        null
+    } catch (e: StackOverflowError) {
+        // A pathologically nested drawable; the stack has unwound by now and nothing is left half-done.
         null
     } catch (e: OutOfMemoryError) {
         // Give the heap back first; the request that hit the wall is simply answered with "no artwork".
