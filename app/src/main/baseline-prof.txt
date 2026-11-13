@@ -1,0 +1,6 @@
+# Baseline profile for the launcher's own code (Compose and AndroidX ship their own profiles).
+# Everything in the app is on the hot path of the first frame or of a key press, so all of it is compiled ahead of
+# time and its classes are preloaded at start-up. On a 1-2 GB TV this is what keeps the first D-pad presses after
+# installation as smooth as the hundredth.
+HSPLtv/monotv/launcher/**->**(**)**
+Ltv/monotv/launcher/**;
