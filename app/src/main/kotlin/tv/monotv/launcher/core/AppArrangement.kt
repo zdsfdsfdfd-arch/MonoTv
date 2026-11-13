@@ -58,7 +58,8 @@ object AppArrangement {
         }
 
         val picked = LinkedHashMap<AppKey, AppEntry>()
-        for (id in config.dockPriority) {
+        // distinct(): an id listed twice in a hand-edited config must not pull in a second build of the same app.
+        for (id in config.dockPriority.distinct()) {
             if (picked.size >= size) break
             val known = config.known(id) ?: continue
             val app = known.packages.firstNotNullOfOrNull { pkg ->
