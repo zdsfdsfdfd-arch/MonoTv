@@ -42,9 +42,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  * one tile — the best entry point it has. Factory / engineering menus from the config blocklist are neither listed
  * nor started, not even through a deep link.
  *
- * The list is kept fresh by package broadcasts only (no polling). Requests to rescan go through a conflated channel
- * consumed by one coroutine, so scans never overlap and an app-store batch update collapses into a single rescan
- * instead of twenty.
+ * The list is kept fresh by package broadcasts only (no polling, no timers). Requests to rescan go through a
+ * conflated channel consumed by one coroutine, so scans never overlap and every broadcast that arrives while a scan
+ * is pending or running is folded into one follow-up scan — an app-store batch update costs a rescan or two, not
+ * twenty.
  *
  * @param scope owns the scan worker; cancelling it ends the repository for good.
  * @param io dispatcher for package-manager queries, which are binder calls and may take tens of milliseconds.
@@ -92,7 +93,7 @@ class AndroidAppsRepository(
         override fun onReceive(context: Context?, intent: Intent?) {
             val action = intent?.action ?: return
             // An update is announced as REMOVED + ADDED + REPLACED. The app never really left, so the first of the
-            // three is skipped: nothing may see the app as "gone" and forget its place in the Dock.
+            // three is skipped: nobody should see the app as gone and forget its place in the Dock.
             if (action == Intent.ACTION_PACKAGE_REMOVED && intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) return
             intent.data?.schemeSpecificPart?.let(onPackageChanged)
             requestScan()
