@@ -177,7 +177,11 @@ class AndroidAppsRepository(
     private fun requestScan() {
         if (workerStarted.compareAndSet(false, true)) {
             scope.launch(io) {
-                for (request in scanRequests) publish(scan())
+                for (request in scanRequests) {
+                    // A request that arrived while this one was waiting for a thread is answered by the same scan.
+                    scanRequests.tryReceive()
+                    publish(scan())
+                }
             }
         }
         scanRequests.trySend(Unit)

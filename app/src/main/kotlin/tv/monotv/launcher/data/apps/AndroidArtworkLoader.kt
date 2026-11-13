@@ -13,7 +13,6 @@ import android.graphics.RectF
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.Build
 import android.util.LruCache
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -209,25 +208,20 @@ class AndroidArtworkLoader(
         return artwork(drawCentered(icon, heightPx, heightPx, crop = false), isBanner = false)
     }
 
+    /**
+     * Both lookups use the classic int-flags overloads on every API level: they are the only ones that exist before
+     * API 33 and behave identically after it, so a second branch for the flags-object twins would buy nothing.
+     */
+    @Suppress("DEPRECATION")
     private fun activityInfo(packageManager: PackageManager, key: AppKey): PackageItemInfo? = try {
-        val component = ComponentName(key.packageName, key.activityName)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManager.getActivityInfo(component, PackageManager.ComponentInfoFlags.of(0L))
-        } else {
-            @Suppress("DEPRECATION")
-            packageManager.getActivityInfo(component, 0)
-        }
+        packageManager.getActivityInfo(ComponentName(key.packageName, key.activityName), 0)
     } catch (e: PackageManager.NameNotFoundException) {
         null
     }
 
+    @Suppress("DEPRECATION")
     private fun applicationInfo(packageManager: PackageManager, packageName: String): PackageItemInfo? = try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0L))
-        } else {
-            @Suppress("DEPRECATION")
-            packageManager.getApplicationInfo(packageName, 0)
-        }
+        packageManager.getApplicationInfo(packageName, 0)
     } catch (e: PackageManager.NameNotFoundException) {
         null
     }
@@ -307,8 +301,8 @@ class AndroidArtworkLoader(
     /** A soft gradient has no detail to lose, so it is generated small and left to the GPU to stretch. */
     private fun fallbackWallpaper(id: String, widthPx: Int, heightPx: Int): Bitmap {
         val shrink = min(1f, sqrt(FALLBACK_MAX_PIXELS / (widthPx.toFloat() * heightPx)))
-        val width = max(1, (widthPx * shrink).toInt())
-        val height = max(1, (heightPx * shrink).toInt())
+        val width = max(1, (widthPx * shrink).roundToInt())
+        val height = max(1, (heightPx * shrink).roundToInt())
         val pixels = ImageMath.fallbackGradient(width, height, id.hashCode())
         return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
     }
