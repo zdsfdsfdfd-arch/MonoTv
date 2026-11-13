@@ -43,8 +43,8 @@ class BackdropState {
 }
 
 /**
- * Loads [source] at (at most) 1920x1080 — a 4K UI simply upscales it, which keeps bitmap memory at ~8 MB per layer —
- * and crossfades to it. No video, no continuous animation: the backdrop is static between changes.
+ * Loads [source] at (at most) 1920x1080 — a 4K UI simply upscales it, which keeps bitmap memory at ~8 MB per layer
+ * (1280x720 / ~3.7 MB with reduced effects) — and crossfades to it. No video, no continuous animation: the backdrop is static between changes.
  */
 @Composable
 fun rememberBackdropState(source: ArtSource?): BackdropState {
@@ -54,7 +54,10 @@ fun rememberBackdropState(source: ArtSource?): BackdropState {
     LaunchedEffect(source) {
         if (source == null || state.currentSource == source) return@LaunchedEffect
         val root = state.frost.rootSize
-        val scale = if (root.width > 1920f) 1920f / root.width else 1f
+        // 1080p is the native UI resolution of these TVs; weak devices (reduced effects) get a 720p backdrop, which
+        // under the scrims is indistinguishable and costs less than half the memory and decode time.
+        val maxWidth = if (motion.rich) 1920f else 1280f
+        val scale = if (root.width > maxWidth) maxWidth / root.width else 1f
         val w = if (root.width > 0f) (root.width * scale).toInt() else 1920
         val h = if (root.height > 0f) (root.height * scale).toInt() else 1080
         val sharp = loader.cached(source, w, h) ?: loader.load(source, w, h)

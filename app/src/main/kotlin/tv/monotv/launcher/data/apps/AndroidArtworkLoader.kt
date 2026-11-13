@@ -75,6 +75,13 @@ class AndroidArtworkLoader(
         override fun sizeOf(key: SizedKey, value: Artwork): Int = value.image.asAndroidBitmap().allocationByteCount
     }
 
+    /**
+     * Full-screen backdrops do not fit the per-picture budget of [cache] (see [load]). Without a home of their own
+     * every hero change would decode a 1080p picture again, so the last few live here, bounded by count: two on
+     * small heaps, three otherwise. That is the current picture, the one it crossfades from and one to go back to.
+     */
+    private val backdropCache = LruCache<SizedKey, Artwork>(if (cacheBytes(appContext) < LARGE_CACHE_BYTES) 2 else 3)
+
     /** Blurred copies are ~9 KB each, so this cache is bounded by count. */
     private val blurredCache = LruCache<ArtSource, Artwork>(BLUR_CACHE_ENTRIES)
 
@@ -84,22 +91,26 @@ class AndroidArtworkLoader(
     /** Bumped by [invalidate] / [clear] so that a decode which started before them does not re-fill the cache. */
     private val generation = AtomicInteger()
 
-    override fun cached(source: ArtSource, widthPx: Int, heightPx: Int): Artwork? =
-        cache.get(SizedKey(source, widthPx, heightPx))
+    override fun cached(source: ArtSource, widthPx: Int, heightPx: Int): Artwork? {
+        val key = SizedKey(source, widthPx, heightPx)
+        return cache.get(key) ?: backdropCache.get(key)
+    }
 
     override suspend fun load(source: ArtSource, widthPx: Int, heightPx: Int): Artwork? {
         if (widthPx <= 0 || heightPx <= 0 || !isPicture(source)) return null
         val key = SizedKey(source, widthPx, heightPx)
-        cache.get(key)?.let { return it }
+        (cache.get(key) ?: backdropCache.get(key))?.let { return it }
         return shared(key) {
             val startedAt = generation.get()
             render(source, min(widthPx, MAX_EDGE_PX), min(heightPx, MAX_EDGE_PX))?.also { artwork ->
                 val bitmap = artwork.image.asAndroidBitmap()
                 bitmap.prepareToDraw()
-                // One picture may take half of the cache at most: a full-screen backdrop must not push every app
-                // banner out. An oversized result is still returned, it is just not remembered.
+                // One picture may take half of the tile cache at most: a full-screen backdrop must not push every
+                // app banner out. Bigger pictures go to the small backdrop cache instead.
                 val fits = bitmap.allocationByteCount <= cache.maxSize() / 2
-                if (fits && startedAt == generation.get()) cache.put(key, artwork)
+                if (startedAt == generation.get()) {
+                    if (fits) cache.put(key, artwork) else backdropCache.put(key, artwork)
+                }
             }
         }
     }
@@ -126,6 +137,9 @@ class AndroidArtworkLoader(
         for (key in cache.snapshot().keys) {
             if (key.source.isBannerOf(packageName)) cache.remove(key)
         }
+        for (key in backdropCache.snapshot().keys) {
+            if (key.source.isBannerOf(packageName)) backdropCache.remove(key)
+        }
         for (source in blurredCache.snapshot().keys) {
             if (source.isBannerOf(packageName)) blurredCache.remove(source)
         }
@@ -138,6 +152,7 @@ class AndroidArtworkLoader(
     fun clear() {
         generation.incrementAndGet()
         cache.evictAll()
+        backdropCache.evictAll()
         blurredCache.evictAll()
     }
 
@@ -426,6 +441,9 @@ class AndroidArtworkLoader(
 
     private companion object {
         const val MIN_CACHE_BYTES = 8 * 1024 * 1024
+
+        /** Tile-cache size from which the heap is considered roomy enough to keep three backdrops instead of two. */
+        const val LARGE_CACHE_BYTES = 16 * 1024 * 1024
         const val BYTES_PER_MB = 1024 * 1024
         const val DECODE_PARALLELISM = 2
         const val BLUR_CACHE_ENTRIES = 32

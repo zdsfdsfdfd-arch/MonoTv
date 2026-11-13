@@ -98,7 +98,7 @@ fun Dock(
     val lensAlpha by animateFloatAsState(if (focusedIndex != null) 1f else 0f, motion.fade(), label = "dockLensAlpha")
 
     val focusedApp = apps.getOrNull(lensIndex)
-    val focusedArt = rememberArtwork(focusedApp?.let { ArtSource.AppBanner(it.key) }, cardW, cardH)
+    val focusedArt = rememberArtwork(focusedApp?.banner, cardW, cardH)
     val lightColor by animateColorAsState(
         targetValue = focusedArt?.accent?.let { Color(it) } ?: colors.accent,
         animationSpec = motion.fade(),
@@ -162,7 +162,7 @@ fun Dock(
                     apps.forEachIndexed { index, app ->
                         val focused = focusedIndex == index
                         ArtCard(
-                            source = ArtSource.AppBanner(app.key),
+                            source = app.banner,
                             label = app.label,
                             width = cardW,
                             height = cardH,

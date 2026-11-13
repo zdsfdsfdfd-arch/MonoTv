@@ -78,7 +78,7 @@ fun HomeScreen(state: LauncherUiState, modifier: Modifier = Modifier) {
 
     val dockFocus = if (nav.section == Section.Dock) nav.dockIndex.coerceIn(0, (state.dock.size - 1).coerceAtLeast(0)) else null
     val dockApp = dockFocus?.let { state.dock.getOrNull(it) }
-    val dockArt = rememberArtwork(dockApp?.let { ArtSource.AppBanner(it.key) }, dockCardWidth(state.dock.size), dockCardWidth(state.dock.size) * 9f / 16f)
+    val dockArt = rememberArtwork(dockApp?.banner, dockCardWidth(state.dock.size), dockCardWidth(state.dock.size) * 9f / 16f)
     val ambient = dockArt?.accent?.let { Color(it) } ?: backdrop.accent?.let { Color(it) } ?: colors.accent
 
     // One-shot rubber band when navigation hits an edge.

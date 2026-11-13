@@ -114,7 +114,7 @@ fun Library(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             ArtCard(
-                                source = ArtSource.AppBanner(app.key),
+                                source = app.banner,
                                 label = app.label,
                                 width = Dimens.AppCardWidth,
                                 height = Dimens.AppCardHeight,

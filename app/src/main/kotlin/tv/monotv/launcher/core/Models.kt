@@ -34,7 +34,10 @@ data class AppEntry(
     val knownId: String?,
     val versionCode: Long,
     val installedAt: Long,
-)
+) {
+    /** The app's banner (or icon tile) as an [ArtSource]. */
+    val banner: ArtSource.AppBanner get() = ArtSource.AppBanner(key, versionCode)
+}
 
 /** Where a piece of artwork comes from. Resolved to pixels by [ArtworkLoader] only. No network sources by design. */
 @Immutable
@@ -42,8 +45,11 @@ sealed interface ArtSource {
     /** Built-in wallpaper / demo artwork, see [Wallpapers]. */
     data class Wallpaper(val id: String) : ArtSource
 
-    /** TV banner (or icon tile) of an installed app. */
-    data class AppBanner(val key: AppKey) : ArtSource
+    /**
+     * TV banner (or icon tile) of an installed app. [version] is the app's versionCode: it is part of the identity so
+     * that an updated app is a different picture for every cache and for every composable that remembered the old one.
+     */
+    data class AppBanner(val key: AppKey, val version: Long = 0L) : ArtSource
 
     /** content:// , file:// or android.resource:// uri (e.g. a Watch Next poster). http(s) is intentionally unsupported. */
     data class LocalUri(val uri: String) : ArtSource
