@@ -76,6 +76,8 @@ class LauncherViewModel(
     private val io: CoroutineDispatcher = Dispatchers.IO,
     /** Whether the optional READ_TV_LISTINGS permission is currently granted. */
     private val hasWatchNextAccess: () -> Boolean = { false },
+    /** Drops decoded artwork that may be stale (the user's wallpaper file has no "changed" event to listen to). */
+    private val refreshArtwork: () -> Unit = {},
 ) : ViewModel() {
 
     private val nav = MutableStateFlow(NavState())
@@ -367,7 +369,11 @@ class LauncherViewModel(
             rowId.startsWith("animation:") ->
                 AnimationLevel.entries.firstOrNull { it.name == arg }?.let { value -> settings.update { it.copy(animation = value) } }
             rowId.startsWith("wallpaper:") ->
-                if (Wallpapers.choices.any { it.id == arg }) settings.update { it.copy(wallpaper = arg) }
+                if (Wallpapers.choices.any { it.id == arg }) {
+                    // Choosing "Свой файл" (again) is the user's way to say "I replaced wallpaper.jpg": re-read it.
+                    if (arg == Wallpapers.CUSTOM) refreshArtwork()
+                    settings.update { it.copy(wallpaper = arg) }
+                }
             rowId.startsWith("size:") ->
                 arg.toIntOrNull()?.let { size -> settings.update { AppArrangement.setDockSize(it, size) } }
             rowId.startsWith("app:") -> {

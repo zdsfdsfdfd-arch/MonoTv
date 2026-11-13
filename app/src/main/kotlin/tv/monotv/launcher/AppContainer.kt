@@ -83,6 +83,7 @@ class AppContainer(private val app: Application) {
                 hasWatchNextAccess = {
                     ContextCompat.checkSelfPermission(app, LauncherViewModel.READ_TV_LISTINGS) == PackageManager.PERMISSION_GRANTED
                 },
+                refreshArtwork = { artwork.clear() },
             )
         }
     }
