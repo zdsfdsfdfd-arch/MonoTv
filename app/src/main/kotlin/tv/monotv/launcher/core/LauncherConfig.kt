@@ -31,6 +31,11 @@ data class LauncherConfig(
      */
     val blockedPackages: List<String> = emptyList(),
     /**
+     * Lower-case substrings; any package whose name contains one of them is treated as blocked as well
+     * (e.g. "factory", "engineermode"). A safety net for firmwares we have never seen.
+     */
+    val blockedKeywords: List<String> = emptyList(),
+    /**
      * Extra launcher categories to query besides LEANBACK_LAUNCHER (and LAUNCHER when enabled in settings), e.g. Sber's
      * private "ru.sberdevices.category.STAR_LAUNCHER".
      */
@@ -40,7 +45,10 @@ data class LauncherConfig(
 
     fun known(id: String?): KnownApp? = if (id == null) null else knownApps.firstOrNull { it.id == id }
 
-    fun isBlocked(packageName: String): Boolean = blockedPackages.any { pattern ->
-        if (pattern.endsWith("*")) packageName.startsWith(pattern.dropLast(1)) else packageName == pattern
+    fun isBlocked(packageName: String): Boolean {
+        val lower = packageName.lowercase()
+        return blockedPackages.any { pattern ->
+            if (pattern.endsWith("*")) packageName.startsWith(pattern.dropLast(1)) else packageName == pattern
+        } || blockedKeywords.any { it.isNotEmpty() && lower.contains(it) }
     }
 }
