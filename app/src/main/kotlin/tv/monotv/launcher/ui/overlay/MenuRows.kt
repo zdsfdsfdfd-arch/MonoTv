@@ -121,11 +121,6 @@ fun MenuRows(
                     .offset(y = slabY)
                     .fillMaxWidth()
                     .height(slabH)
-                    .graphicsLayer {
-                        val s = 1f + 0.02f * grab
-                        scaleX = s
-                        scaleY = s
-                    }
                     .drawBehind {
                         drawSoftShadow(Dimens.RowCorner.toPx(), alpha = 0.5f + 0.5f * grab)
                         drawRoundRect(slabColor, cornerRadius = CornerRadius(Dimens.RowCorner.toPx()))
@@ -191,8 +186,9 @@ private fun MenuRowContent(row: MenuRow, focused: Boolean, grabbed: Boolean, mod
             }
         }
         if (row.statusDot) {
-            Icon(MonoIcon.Dot, if (focused) onSlab else colors.accent, Modifier.size(9.dp))
-            Spacer(Modifier.width(6.dp))
+            val dot = if (focused) onSlab else colors.accent
+            Box(Modifier.size(7.dp).drawBehind { drawCircle(dot) })
+            Spacer(Modifier.width(2.dp))
         }
         if (!row.value.isNullOrBlank()) {
             Spacer(Modifier.width(10.dp))

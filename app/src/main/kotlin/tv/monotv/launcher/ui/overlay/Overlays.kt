@@ -60,6 +60,12 @@ import tv.monotv.launcher.ui.theme.Dimens
 import tv.monotv.launcher.ui.theme.Mono
 
 /**
+ * Popups (menus, dialogs, toast) are opaque dark panels with a glass edge: they must stay readable over ANY artwork, and with no
+ * runtime blur available a see-through panel would let the text behind it bleed into its own.
+ */
+private const val PanelShade = 1f
+
+/**
  * Hosts every overlay of the launcher. Each kind keeps the last value it showed so its exit animation can still draw
  * after the navigation state has already dropped it.
  */
@@ -99,7 +105,7 @@ fun Overlays(
             exit = slideOutHorizontally(motion.overlay()) { it / 3 } + fadeOut(motion.overlay()),
             modifier = Modifier.align(Alignment.CenterEnd),
         ) {
-            lastSettings?.let { SettingsSheet(it, settingsRows, dimmed = confirm != null) }
+            lastSettings?.let { SettingsSheet(it, settingsRows) }
         }
 
         AnimatedVisibility(
@@ -112,6 +118,10 @@ fun Overlays(
         ) {
             lastInputs?.let { InputsMenu(state.inputs, it.index) }
         }
+
+        // Modal dialogs sit on their own scrim so nothing behind them competes with their text.
+        val modal by animateFloatAsState(if (appMenu != null || confirm != null) 0.58f else 0f, motion.fade(), label = "modalScrim")
+        Box(Modifier.fillMaxSize().drawBehind { if (modal > 0.003f) drawRect(Color.Black, alpha = modal) })
 
         AnimatedVisibility(
             visible = appMenu != null,
@@ -142,7 +152,7 @@ fun Overlays(
             exit = fadeOut(motion.overlay()) + slideOutVertically(motion.overlay()) { it / 2 },
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = Dimens.SafeV + 6.dp),
         ) {
-            GlassBox(corner = 17.dp, shade = 0.72f) {
+            GlassBox(corner = 17.dp, shade = PanelShade) {
                 Txt(lastToast, Mono.type.caption, Mono.colors.textPrimary, Modifier.padding(horizontal = 18.dp, vertical = 9.dp), maxLines = 2)
             }
         }
@@ -157,7 +167,7 @@ fun Overlays(
 @Composable
 private fun InputsMenu(inputs: List<InputItem>, focusedIndex: Int) {
     val colors = Mono.colors
-    GlassBox(Modifier.width(272.dp), corner = 20.dp, shade = 0.72f) {
+    GlassBox(Modifier.width(272.dp), corner = 20.dp, shade = PanelShade) {
         Column(Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
             Txt("ВХОДЫ", Mono.type.eyebrow, colors.textTertiary, Modifier.padding(start = 14.dp, top = 4.dp, bottom = 8.dp))
             MenuRows(
@@ -199,15 +209,12 @@ private fun InputsMenu(inputs: List<InputItem>, focusedIndex: Int) {
 private fun SettingsSheet(
     overlay: Overlay.Settings,
     settingsRows: (SettingsPageId) -> List<SettingsRow>,
-    dimmed: Boolean,
 ) {
     val colors = Mono.colors
     val type = Mono.type
     val motion = Mono.motion
     val frame = overlay.stack.lastOrNull() ?: SettingsFrame(SettingsPageId.Root)
     val parent = overlay.stack.getOrNull(overlay.stack.size - 2)
-    val dim by animateFloatAsState(if (dimmed) 0.5f else 0f, motion.fade(), label = "settingsDim")
-
     BoxWithConstraints(
         Modifier
             .width(436.dp)
@@ -218,13 +225,12 @@ private fun SettingsSheet(
                     Brush.horizontalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.45f)), startX = -70.dp.toPx(), endX = 0f),
                     topLeft = Offset(-70.dp.toPx(), 0f), size = androidx.compose.ui.geometry.Size(70.dp.toPx(), size.height),
                 )
-                drawRect(colors.surface.copy(alpha = 0.955f))
+                drawRect(colors.surface)
                 drawRect(
                     Brush.verticalGradient(listOf(colors.glassStrokeTop, colors.glassStrokeBottom)),
                     size = androidx.compose.ui.geometry.Size(Dimens.GlassStroke.toPx(), size.height),
                 )
-            }
-            .graphicsLayer { alpha = 1f - dim },
+            },
     ) {
         val listHeight = maxHeight - Dimens.SafeV - 96.dp - 44.dp
         Crossfade(targetState = frame.page, animationSpec = motion.overlay(), label = "settingsPage") { page ->
@@ -281,7 +287,7 @@ private fun SettingsRow.toMenuRow(): MenuRow = MenuRow(
 @Composable
 private fun AppMenu(app: AppEntry?, menu: Overlay.AppMenu) {
     val colors = Mono.colors
-    GlassBox(Modifier.width(300.dp), corner = 22.dp, shade = 0.78f) {
+    GlassBox(Modifier.width(300.dp), corner = 22.dp, shade = PanelShade) {
         Column(Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
             Row(Modifier.padding(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 AppThumb(menu.app, width = 64.dp)
@@ -306,7 +312,7 @@ private fun ConfirmDialog(confirm: Overlay.Confirm) {
     val colors = Mono.colors
     val type = Mono.type
     val pointer = LocalPointerHandler.current
-    GlassBox(Modifier.width(452.dp), corner = 24.dp, shade = 0.82f) {
+    GlassBox(Modifier.width(452.dp), corner = 24.dp, shade = PanelShade) {
         Column(Modifier.padding(start = 28.dp, end = 28.dp, top = 26.dp, bottom = 22.dp)) {
             Txt(confirm.id.title, type.section.copy(fontSize = type.section.fontSize * 1.18f), colors.textPrimary, maxLines = 2)
             Spacer(Modifier.height(10.dp))
