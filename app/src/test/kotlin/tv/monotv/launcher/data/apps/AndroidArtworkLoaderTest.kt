@@ -565,19 +565,32 @@ class AndroidArtworkLoaderTest {
     }
 
     @Test
-    fun `a picture larger than half the cache is returned but not remembered`() {
+    fun `pictures too big for the tile cache live in the small backdrop cache`() {
         shadowOf(app.getSystemService(ActivityManager::class.java)).setMemoryClass(16)
         val tight = AndroidArtworkLoader(app, Dispatchers.Unconfined)
-        // 8 MB cache: a 1200x1000 picture is 4.8 MB, a 640x360 one is 0.9 MB.
-        writeImage(File(filesDir, "wallpaper.png"), bitmapOf(1200, 1000) { _, _ -> Color.RED })
-        val source = ArtSource.Wallpaper(Wallpapers.CUSTOM)
+        // 8 MB tile cache: a 1200x1000 picture is 4.8 MB (more than half of it), a 640x360 one is 0.9 MB.
+        val sources = List(3) { index ->
+            val file = writeImage(File(filesDir, "backdrop$index.png"), bitmapOf(1200, 1000) { _, _ -> Color.RED })
+            ArtSource.LocalUri(Uri.fromFile(file).toString())
+        }
 
-        val huge = checkNotNull(runBlocking { tight.load(source, 1200, 1000) })
+        val huge = checkNotNull(runBlocking { tight.load(sources[0], 1200, 1000) })
         assertEquals(1200 to 1000, huge.size())
-        assertNull(tight.cached(source, 1200, 1000))
+        assertSame("a backdrop is decoded once and then remembered", huge, tight.cached(sources[0], 1200, 1000))
 
-        assertNotNull(runBlocking { tight.load(source, 640, 360) })
-        assertNotNull(tight.cached(source, 640, 360))
+        // A small heap keeps two backdrops: loading a third forgets the least recently used one.
+        assertNotNull(runBlocking { tight.load(sources[1], 1200, 1000) })
+        assertNotNull(runBlocking { tight.load(sources[2], 1200, 1000) })
+        assertNull(tight.cached(sources[0], 1200, 1000))
+        assertNotNull(tight.cached(sources[1], 1200, 1000))
+        assertNotNull(tight.cached(sources[2], 1200, 1000))
+
+        // Small pictures still go to the byte-bounded tile cache, and clear() empties both.
+        assertNotNull(runBlocking { tight.load(sources[0], 640, 360) })
+        assertNotNull(tight.cached(sources[0], 640, 360))
+        tight.clear()
+        assertNull(tight.cached(sources[0], 640, 360))
+        assertNull(tight.cached(sources[2], 1200, 1000))
     }
 
     @Test
