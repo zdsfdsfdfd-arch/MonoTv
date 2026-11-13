@@ -343,6 +343,7 @@ class AndroidSystemRepositoryTest {
         val repository = repository()
         val before = repository.device.value
 
+        @Suppress("DEPRECATION") // Same shortcut family as answer(), see there.
         shadowOf(packageManager).removeResolveInfosForIntent(homeIntent(), STOCK_LAUNCHER)
         answer(homeIntent(), app.packageName, AndroidSystemRepository.HOME_ALIAS_CLASS)
         assertEquals("nothing is re-read behind the caller's back", before, repository.device.value)
@@ -560,7 +561,12 @@ class AndroidSystemRepositoryTest {
 
     private fun homeIntent(): Intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
 
-    /** Makes [packageName]/[className] the activity that resolves [intent]. */
+    /**
+     * Makes [packageName]/[className] the activity that resolves [intent]. Robolectric deprecates this shortcut in
+     * favour of installing whole packages with intent filters; for "this intent resolves to that component" it is
+     * still the most direct way to say it.
+     */
+    @Suppress("DEPRECATION")
     private fun answer(intent: Intent, packageName: String, className: String) {
         val info = ResolveInfo().apply {
             activityInfo = ActivityInfo().apply {

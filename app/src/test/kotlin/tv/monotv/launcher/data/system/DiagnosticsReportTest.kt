@@ -129,7 +129,7 @@ class DiagnosticsReportTest {
         val fallback = resolveInfo("com.android.tv.settings", "com.android.tv.settings.system.FallbackHome", system = true).apply {
             priority = -1000
         }
-        shadowOf(packageManager).addResolveInfoForIntent(homeIntent(), listOf(stock, fallback))
+        answer(homeIntent(), stock, fallback)
 
         val home = section(DiagnosticsReport.build(app), "HOME candidates")
 
@@ -149,7 +149,7 @@ class DiagnosticsReportTest {
     @Test
     fun `no default home is said in so many words`() {
         val resolver = resolveInfo("android", "com.android.internal.app.ResolverActivity", system = true)
-        shadowOf(packageManager).addResolveInfoForIntent(homeIntent(), resolver)
+        answer(homeIntent(), resolver)
 
         val home = section(DiagnosticsReport.build(app), "HOME candidates")
 
@@ -162,23 +162,19 @@ class DiagnosticsReportTest {
         val leanback = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
         val star = Intent(Intent.ACTION_MAIN).addCategory("ru.sberdevices.category.STAR_LAUNCHER")
         val phone = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        shadowOf(packageManager).addResolveInfoForIntent(
+        answer(
             leanback,
-            listOf(
-                resolveInfo("ru.kinopoisk.tv", "ru.kinopoisk.tv.MainActivity", label = "Кинопоиск", banner = true),
-                resolveInfo("com.android.tv.settings", "com.android.tv.settings.MainSettings", label = "Настройки", system = true),
-            ),
+            resolveInfo("ru.kinopoisk.tv", "ru.kinopoisk.tv.MainActivity", label = "Кинопоиск", banner = true),
+            resolveInfo("com.android.tv.settings", "com.android.tv.settings.MainSettings", label = "Настройки", system = true),
         )
-        shadowOf(packageManager).addResolveInfoForIntent(
+        answer(
             star,
             resolveInfo("ru.sberdevices.startube", "ru.sberdevices.startube.MainActivity", label = "Видео", system = true, banner = true),
         )
-        shadowOf(packageManager).addResolveInfoForIntent(
+        answer(
             phone,
-            listOf(
-                resolveInfo("org.videolan.vlc", "org.videolan.vlc.StartActivity", label = "VLC\nplayer"),
-                resolveInfo("com.cvte.fac.menu", "com.cvte.fac.menu.MainActivity", label = "Factory", system = true),
-            ),
+            resolveInfo("org.videolan.vlc", "org.videolan.vlc.StartActivity", label = "VLC\nplayer"),
+            resolveInfo("com.cvte.fac.menu", "com.cvte.fac.menu.MainActivity", label = "Factory", system = true),
         )
 
         val report = DiagnosticsReport.build(app)
@@ -221,7 +217,7 @@ class DiagnosticsReportTest {
     fun `building the report starts nothing and changes nothing`() {
         val alias = ComponentName(app.packageName, AndroidSystemRepository.HOME_ALIAS_CLASS)
         val stock = resolveInfo("ru.sberdevices.starlauncher", "ru.sberdevices.starlauncher.ui.mainscreen.MainActivity", system = true)
-        shadowOf(packageManager).addResolveInfoForIntent(homeIntent(), stock)
+        answer(homeIntent(), stock)
         install("ru.sberdevices.starlauncher", versionName = "2.61.1", system = true)
         val receiversBefore = shadowOf(app).registeredReceivers.size
 
@@ -256,6 +252,15 @@ class DiagnosticsReportTest {
     }
 
     private fun homeIntent(): Intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+
+    /**
+     * Makes [activities] the answer to [intent]. Robolectric deprecates this shortcut in favour of installing whole
+     * packages with intent filters; for "this intent resolves to these components" it is still the most direct way.
+     */
+    @Suppress("DEPRECATION")
+    private fun answer(intent: Intent, vararg activities: ResolveInfo) {
+        shadowOf(packageManager).addResolveInfoForIntent(intent, activities.toList())
+    }
 
     private fun resolveInfo(
         packageName: String,

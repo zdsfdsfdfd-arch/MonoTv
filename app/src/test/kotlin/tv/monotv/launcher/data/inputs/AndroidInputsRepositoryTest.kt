@@ -229,7 +229,12 @@ class AndroidInputsRepositoryTest {
     // Helpers
     // -----------------------------------------------------------------------------------------------------------------
 
-    /** Makes [packageName]/[className] the activity that resolves [intent]. */
+    /**
+     * Makes [packageName]/[className] the activity that resolves [intent]. Robolectric deprecates this shortcut in
+     * favour of installing whole packages with intent filters; for "this intent resolves to that component" it is
+     * still the most direct way to say it.
+     */
+    @Suppress("DEPRECATION")
     private fun answer(intent: Intent, packageName: String, className: String) {
         val info = ResolveInfo().apply {
             activityInfo = ActivityInfo().apply {
