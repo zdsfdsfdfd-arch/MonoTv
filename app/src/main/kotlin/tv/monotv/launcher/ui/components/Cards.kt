@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -101,7 +102,7 @@ fun ArtCard(
                 selected = focused
                 role = Role.Button
             }
-            .then(if (onTap != null) Modifier.pointerInput(onTap) { detectTap(onTap) } else Modifier),
+            .tappable(onTap),
     ) {
         Box(
             Modifier
@@ -208,4 +209,15 @@ fun ProgressBar(progress: Float, modifier: Modifier = Modifier, height: Dp = 3.d
 
 internal suspend fun PointerInputScope.detectTap(onTap: () -> Unit) {
     detectTapGestures(onTap = { onTap() })
+}
+
+/**
+ * Tap support for air-mouse / touchpad remotes. The gesture detector is installed once and always calls the latest
+ * [onTap], so recomposing with a new lambda never restarts pointer input.
+ */
+@Composable
+internal fun Modifier.tappable(onTap: (() -> Unit)?): Modifier {
+    if (onTap == null) return this
+    val latest = rememberUpdatedState(onTap)
+    return pointerInput(Unit) { detectTap { latest.value() } }
 }

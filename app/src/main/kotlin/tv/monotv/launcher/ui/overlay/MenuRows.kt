@@ -45,7 +45,7 @@ import tv.monotv.launcher.ui.components.LocalPointerHandler
 import tv.monotv.launcher.ui.components.MonoIcon
 import tv.monotv.launcher.ui.components.PointerTarget
 import tv.monotv.launcher.ui.components.Txt
-import tv.monotv.launcher.ui.components.detectTap
+import tv.monotv.launcher.ui.components.tappable
 import tv.monotv.launcher.ui.components.drawImageCover
 import tv.monotv.launcher.ui.components.drawSoftShadow
 import tv.monotv.launcher.ui.components.rememberArtwork
@@ -139,7 +139,7 @@ fun MenuRows(
                     modifier = Modifier
                         .offset(y = top)
                         .height(rowHeight(row))
-                        .pointerInput(index) { detectTap { pointer(PointerTarget.OverlayRow(index)) } },
+                        .tappable { pointer(PointerTarget.OverlayRow(index)) },
                 )
             }
         }

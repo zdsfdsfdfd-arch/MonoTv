@@ -43,6 +43,7 @@ import tv.monotv.launcher.ui.components.PointerTarget
 import tv.monotv.launcher.ui.components.ProgressBar
 import tv.monotv.launcher.ui.components.Txt
 import tv.monotv.launcher.ui.components.detectTap
+import tv.monotv.launcher.ui.components.tappable
 import tv.monotv.launcher.ui.components.drawGlow
 import tv.monotv.launcher.ui.components.drawSoftShadow
 import tv.monotv.launcher.ui.theme.Mono
@@ -133,7 +134,7 @@ private fun HeroButton(label: String, focused: Boolean, onTap: () -> Unit) {
                 selected = focused
                 role = Role.Button
             }
-            .pointerInput(onTap) { detectTap(onTap) }
+            .tappable(onTap)
             .padding(start = 16.dp, end = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -15,9 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -89,9 +87,10 @@ fun Dock(
     val panelH = cardH + pad * 2
 
     // The light keeps its last position while the dock is unfocused, so it re-appears where the user left it.
-    var lastIndex by remember { mutableIntStateOf(0) }
-    if (focusedIndex != null) lastIndex = focusedIndex
-    val lensIndex = lastIndex.coerceIn(0, count - 1)
+    // (A plain holder rather than snapshot state: it is written during composition.)
+    val lastIndex = remember { intArrayOf(0) }
+    if (focusedIndex != null) lastIndex[0] = focusedIndex
+    val lensIndex = lastIndex[0].coerceIn(0, count - 1)
     val lensX by animateDpAsState(pad + (cardW + gap) * lensIndex, motion.glide(), label = "dockLensX")
     val lensAlpha by animateFloatAsState(if (focusedIndex != null) 1f else 0f, motion.fade(), label = "dockLensAlpha")
 

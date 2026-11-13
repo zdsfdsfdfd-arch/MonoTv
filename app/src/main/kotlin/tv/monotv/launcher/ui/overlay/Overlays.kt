@@ -25,9 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -55,6 +53,7 @@ import tv.monotv.launcher.ui.components.MonoIcon
 import tv.monotv.launcher.ui.components.PointerTarget
 import tv.monotv.launcher.ui.components.Txt
 import tv.monotv.launcher.ui.components.detectTap
+import tv.monotv.launcher.ui.components.tappable
 import tv.monotv.launcher.ui.components.drawSoftShadow
 import tv.monotv.launcher.ui.theme.Dimens
 import tv.monotv.launcher.ui.theme.Mono
@@ -84,14 +83,11 @@ fun Overlays(
     val appMenu = overlays.lastOrNull { it is Overlay.AppMenu } as Overlay.AppMenu?
     val confirm = overlays.lastOrNull { it is Overlay.Confirm } as Overlay.Confirm?
 
-    var lastInputs by remember { mutableStateOf<Overlay.Inputs?>(null) }
-    var lastSettings by remember { mutableStateOf<Overlay.Settings?>(null) }
-    var lastAppMenu by remember { mutableStateOf<Overlay.AppMenu?>(null) }
-    var lastConfirm by remember { mutableStateOf<Overlay.Confirm?>(null) }
-    if (inputs != null) lastInputs = inputs
-    if (settings != null) lastSettings = settings
-    if (appMenu != null) lastAppMenu = appMenu
-    if (confirm != null) lastConfirm = confirm
+    // Kept after the overlay left the navigation state, so its exit animation still has something to draw.
+    val lastInputs = rememberLast(inputs)
+    val lastSettings = rememberLast(settings)
+    val lastAppMenu = rememberLast(appMenu)
+    val lastConfirm = rememberLast(confirm)
 
     Box(modifier.fillMaxSize()) {
         if (overlays.isNotEmpty()) {
@@ -144,8 +140,7 @@ fun Overlays(
             lastConfirm?.let { ConfirmDialog(it) }
         }
 
-        var lastToast by remember { mutableStateOf("") }
-        if (state.toast != null) lastToast = state.toast
+        val lastToast = rememberLast(state.toast).orEmpty()
         AnimatedVisibility(
             visible = state.toast != null,
             enter = fadeIn(motion.overlay()) + slideInVertically(motion.overlay()) { it / 2 },
@@ -157,6 +152,15 @@ fun Overlays(
             }
         }
     }
+}
+
+/** Last non-null [value]. A plain holder, not snapshot state: nothing is written to state during composition. */
+@Composable
+private fun <T : Any> rememberLast(value: T?): T? {
+    val holder = remember { arrayOfNulls<Any>(1) }
+    if (value != null) holder[0] = value
+    @Suppress("UNCHECKED_CAST")
+    return holder[0] as T?
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -345,7 +349,7 @@ private fun DialogButton(label: String, focused: Boolean, onTap: () -> Unit) {
                 drawSoftShadow(size.height / 2f, alpha = f)
                 drawRoundRect(lerp(colors.glassFill, colors.focusFill, f), cornerRadius = CornerRadius(size.height / 2f))
             }
-            .pointerInput(onTap) { detectTap(onTap) }
+            .tappable(onTap)
             .padding(horizontal = 22.dp),
         contentAlignment = Alignment.Center,
     ) {

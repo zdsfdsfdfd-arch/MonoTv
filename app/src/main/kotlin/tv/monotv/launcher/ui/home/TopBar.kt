@@ -41,6 +41,7 @@ import tv.monotv.launcher.ui.components.MonoIcon
 import tv.monotv.launcher.ui.components.PointerTarget
 import tv.monotv.launcher.ui.components.Txt
 import tv.monotv.launcher.ui.components.detectTap
+import tv.monotv.launcher.ui.components.tappable
 import tv.monotv.launcher.ui.components.drawSoftShadow
 import tv.monotv.launcher.ui.theme.Dimens
 import tv.monotv.launcher.ui.theme.Mono
@@ -136,7 +137,7 @@ fun Pill(icon: MonoIcon, label: String, focused: Boolean, onTap: () -> Unit, mod
                 selected = focused
                 role = Role.Button
             }
-            .pointerInput(onTap) { detectTap(onTap) }
+            .tappable(onTap)
             .padding(start = 11.dp, end = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
