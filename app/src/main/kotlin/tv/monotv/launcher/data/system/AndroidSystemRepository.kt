@@ -485,15 +485,21 @@ internal object PlatformProbe {
     }
 }
 
-/** The blocklist no configuration file can lift: factory, engineering and service menus. */
-private val forbiddenTargets: LauncherConfig = LauncherConfigLoader.withSafetyFloor(LauncherConfig())
+/** The blocklist no configuration file can lift, see [LauncherConfigLoader.withSafetyFloor]. */
+private val safetyFloor: LauncherConfig = LauncherConfigLoader.withSafetyFloor(LauncherConfig())
 
 /**
- * The activity that would handle [intent], or null when nothing handles it — or when the answer is a factory /
- * engineering / service menu, which this app must never open however the intent got routed there.
+ * True for factory, engineering and service menus. Opening one by accident can leave a TV unusable, so nothing in
+ * this module may ever start such a package — whatever intent happened to resolve to it.
+ */
+internal fun isForbiddenPackage(packageName: String): Boolean = safetyFloor.isBlocked(packageName)
+
+/**
+ * The activity that would handle [intent], or null when nothing handles it or the answer is a
+ * [forbidden][isForbiddenPackage] package.
  */
 internal fun Context.resolveSafeActivity(intent: Intent): ComponentName? = try {
-    intent.resolveActivity(packageManager)?.takeUnless { forbiddenTargets.isBlocked(it.packageName) }
+    intent.resolveActivity(packageManager)?.takeUnless { isForbiddenPackage(it.packageName) }
 } catch (e: RuntimeException) {
     null
 }

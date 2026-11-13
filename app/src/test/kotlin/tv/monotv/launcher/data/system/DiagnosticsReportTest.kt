@@ -192,8 +192,10 @@ class DiagnosticsReportTest {
         val phoneLines = section(report, "Launchable activities: android.intent.category.LAUNCHER")
         assertTrue("a label is flattened to one line", phoneLines.contains("VLC player | org.videolan.vlc/.StartActivity | user | banner=no"))
         val factory = phoneLines.single { it.contains("com.cvte.fac.menu") }
-        assertTrue("the factory menu is named but flagged as blocked", factory.contains(" | BLOCKED"))
+        assertTrue("the factory menu is named, by package only, and flagged as blocked", factory.startsWith("com.cvte.fac.menu | BLOCKED"))
         assertEquals(1, report.lines().count { it.contains(" | BLOCKED") })
+        assertFalse("nothing that could be used to launch it is written down", report.contains("com.cvte.fac.menu/"))
+        assertFalse(report.contains("com.cvte.fac.menu.MainActivity"))
     }
 
     @Test

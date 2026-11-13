@@ -19,8 +19,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import tv.monotv.launcher.BuildConfig
-import tv.monotv.launcher.core.LauncherConfig
-import tv.monotv.launcher.data.apps.LauncherConfigLoader
 
 /**
  * A plain-text description of the device the launcher is running on.
@@ -31,10 +29,10 @@ import tv.monotv.launcher.data.apps.LauncherConfigLoader
  * Settings → Система and copies the file off the TV with a file manager.
  *
  * STRICTLY READ-ONLY. Everything here is a query: `Build` fields, PackageManager look-ups and the TV input list.
- * No activity or service is started, no component or setting is changed, nothing is sent anywhere (the app has no
- * network permission) and the factory / service menus are only ever *named*, never resolved into something
- * launchable. Each section is collected independently, so one API that a firmware has broken costs one section
- * and not the whole report.
+ * No activity or service is started, no component or setting is changed and nothing is sent anywhere (the app has
+ * no network permission). Factory and service menus are only ever named by package — the report says that one is
+ * present, never which activity would open it. Each section is collected independently, so one API that a
+ * firmware has broken costs one section and not the whole report.
  */
 object DiagnosticsReport {
 
@@ -56,9 +54,6 @@ object DiagnosticsReport {
     private const val MAX_ACTIVITIES_PER_CATEGORY = 500
 
     private const val BYTES_PER_MB = 1024L * 1024L
-
-    /** Marks packages the launcher refuses to list or start, so the report shows the guard at work. */
-    private val forbidden: LauncherConfig = LauncherConfigLoader.withSafetyFloor(LauncherConfig())
 
     /**
      * System packages worth knowing about on a Sber device, with what each one is. They are only looked up by name.
@@ -255,9 +250,9 @@ object DiagnosticsReport {
         val current = PlatformProbe.currentHome(packageManager)
         val lines = ArrayList<String>()
         lines += if (current != null) {
-            "current default: ${current.flattenToShortString()}"
+            "current default: ${nameOf(current)}"
         } else {
-            "current default: none — отвечает системный диалог выбора (несколько кандидатов, ни один не выбран)"
+            "current default: none — ни один домашний экран не выбран по умолчанию"
         }
         // Disabled candidates are listed too: a disabled stock launcher is exactly the kind of thing worth seeing.
         val candidates = queryActivities(packageManager, PlatformProbe.homeIntent(), PackageManager.MATCH_DISABLED_COMPONENTS)
@@ -265,7 +260,7 @@ object DiagnosticsReport {
         for (candidate in candidates) {
             val component = componentOf(candidate)
             lines += listOf(
-                component.flattenToShortString(),
+                nameOf(component),
                 "priority=${candidate.priority}",
                 "isDefault=${candidate.isDefault}",
                 origin(candidate.activityInfo.applicationInfo),
@@ -275,24 +270,32 @@ object DiagnosticsReport {
         return lines
     }
 
-    /** Activities a launcher would offer for [category], the way PackageManager reports them (enabled ones only). */
+    /**
+     * Activities a launcher would offer for [category], the way PackageManager reports them (enabled ones only).
+     * A factory or service menu that advertises itself here is reduced to its package name and a BLOCKED mark:
+     * worth knowing that it is there, not worth writing down how to open it.
+     */
     private fun launchables(packageManager: PackageManager, category: String): List<String> {
         val activities = queryActivities(packageManager, Intent(Intent.ACTION_MAIN).addCategory(category), 0)
         val lines = activities.take(MAX_ACTIVITIES_PER_CATEGORY).map { info ->
             val activity = info.activityInfo
-            val label = try {
-                info.loadLabel(packageManager).toString()
-            } catch (e: RuntimeException) {
-                activity.name
+            if (isForbiddenPackage(activity.packageName)) {
+                "${activity.packageName} | BLOCKED: заводское или сервисное меню, не показывается и не запускается"
+            } else {
+                val label = try {
+                    info.loadLabel(packageManager).toString()
+                } catch (e: RuntimeException) {
+                    activity.name
+                }
+                val hasBanner = activity.banner != 0 || activity.applicationInfo.banner != 0
+                listOf(
+                    label,
+                    componentOf(info).flattenToShortString(),
+                    origin(activity.applicationInfo),
+                    "banner=${yesNo(hasBanner)}",
+                ).joinToString(" | ")
             }
-            val hasBanner = activity.banner != 0 || activity.applicationInfo.banner != 0
-            listOf(
-                label,
-                componentOf(info).flattenToShortString(),
-                origin(activity.applicationInfo),
-                "banner=${yesNo(hasBanner)}",
-            ).joinToString(" | ") + if (forbidden.isBlocked(activity.packageName)) " | BLOCKED: не показывается и не запускается" else ""
-        }.sorted()
+        }.distinct().sorted()
         return if (activities.size > MAX_ACTIVITIES_PER_CATEGORY) {
             lines + "… ещё ${activities.size - MAX_ACTIVITIES_PER_CATEGORY}"
         } else {
@@ -383,6 +386,10 @@ object DiagnosticsReport {
 
     private fun componentOf(info: ResolveInfo): ComponentName =
         ComponentName(info.activityInfo.packageName, info.activityInfo.name)
+
+    /** "package/.Activity" as usual, but only the package for a factory or service menu (see the class comment). */
+    private fun nameOf(component: ComponentName): String =
+        if (isForbiddenPackage(component.packageName)) "${component.packageName} (BLOCKED)" else component.flattenToShortString()
 
     private fun componentState(packageManager: PackageManager, component: ComponentName): String = try {
         when (packageManager.getComponentEnabledSetting(component)) {
