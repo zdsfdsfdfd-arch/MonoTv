@@ -1,20 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- A TV app, but installable on any Android device (the features are optional). -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
+    <!-- Wi-Fi / Ethernet indicator in the top bar. The app has NO INTERNET permission: it cannot open a socket. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
+        Optional, off by default: lets "Продолжить просмотр" show what other apps published to the TV provider
+        (Watch Next). It is a runtime permission of the TV provider app; without it the launcher simply shows its own
+        "recently opened" list instead. Grant: Настройки → Система, or
+        adb shell pm grant tv.monotv.launcher android.permission.READ_TV_LISTINGS
+    -->
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
+
+    <!--
+        A launcher's job is to list and start the installed apps, so it must be able to see them on Android 11+.
+        This is a normal (install-time) permission; combined with the absence of INTERNET the list can not leave the
+        device. Narrower <queries> filters are not enough here: the launcher categories are user-configurable
+        (launcher-config.json) and "continue watching" deep links may point to any installed app.
+    -->
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:ignore="QueryAllPackagesPermission" />
+
     <application
-        android:label="Mono TV"
-        android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+        android:name=".LauncherApp"
+        android:allowBackup="false"
+        android:hardwareAccelerated="true"
+        android:label="@string/app_name"
+        android:supportsRtl="false"
+        android:theme="@style/Theme.MonoTv">
+
+        <!--
+            The launcher as an ORDINARY app: it appears on the stock Sber home screen (LEANBACK_LAUNCHER + banner) and
+            is started from there. It does not claim the HOME role.
+        -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|density|fontScale|locale|layoutDirection|touchscreen|mcc|mnc"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resizeableActivity="false"
+            android:screenOrientation="landscape"
+            android:stateNotNeeded="true"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustNothing">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            Optional HOME role, shipped DISABLED. While disabled this alias does not exist for the system: installing
+            the app changes nothing about the HOME button. It is enabled only by an explicit user action (Настройки →
+            Система → "Сделать домашним экраном", or scripts/set-home.sh) and is the ONLY component whose enabled
+            state this app ever changes. The stock launcher is never disabled, hidden or modified.
+        -->
+        <activity-alias
+            android:name=".HomeAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity=".MainActivity">
+            <intent-filter android:priority="0">
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
     </application>
 </manifest>
