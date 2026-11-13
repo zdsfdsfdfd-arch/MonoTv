@@ -8,3 +8,6 @@ captures/
 .DS_Store
 *.keystore
 !debug.keystore
+.claude/
+device-report/
+screenshots/
