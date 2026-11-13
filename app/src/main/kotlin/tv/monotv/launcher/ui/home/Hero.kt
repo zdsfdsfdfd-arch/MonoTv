@@ -65,10 +65,12 @@ fun HeroBlock(item: HeroItem?, index: Int, count: Int, focused: Boolean, modifie
             }
         }
         Spacer(Modifier.height(18.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // Height is reserved even while there is nothing to show yet, so the layout does not jump when content arrives.
+        Row(Modifier.height(36.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (item == null) return@Row
             val pointer = LocalPointerHandler.current
             HeroButton(
-                label = item?.actionLabel ?: "Открыть",
+                label = item.actionLabel,
                 focused = focused,
                 onTap = { pointer(PointerTarget.HomeItem(Section.Hero, index)) },
             )

@@ -75,6 +75,9 @@ fun Dock(
 ) {
     val count = if (apps.isEmpty()) skeletonCount else apps.size
     if (count <= 0) return
+    // Skeleton tiles (apps still loading) are not focusable: no light, no label.
+    @Suppress("NAME_SHADOWING")
+    val focusedIndex = if (apps.isEmpty()) null else focusedIndex
     val colors = Mono.colors
     val motion = Mono.motion
     val pointer = LocalPointerHandler.current
